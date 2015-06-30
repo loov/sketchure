@@ -71,11 +71,11 @@ func (p *Image) LabAt(x, y int) Color {
 	if !(image.Point{x, y}.In(p.Rect)) {
 		return Color{}
 	}
-	i := p.PixOffset(x, y)
+	i := p.Offset(x, y)
 	return Color{p.L[i], p.A[i], p.B[i]}
 }
 
-func (p *Image) PixOffset(x, y int) int {
+func (p *Image) Offset(x, y int) int {
 	return (y-p.Rect.Min.Y)*p.Stride + (x - p.Rect.Min.X)
 }
 
@@ -84,7 +84,7 @@ func (p *Image) Set(x, y int, c color.Color) {
 		return
 	}
 
-	i := p.PixOffset(x, y)
+	i := p.Offset(x, y)
 	c1 := Model.Convert(c).(Color)
 	p.L[i], p.A[i], p.B[i] = c1.L, c1.A, c1.B
 }
@@ -94,6 +94,6 @@ func (p *Image) SetLab(x, y int, c Color) {
 		return
 	}
 
-	i := p.PixOffset(x, y)
+	i := p.Offset(x, y)
 	p.L[i], p.A[i], p.B[i] = c.L, c.A, c.B
 }

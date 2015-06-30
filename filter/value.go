@@ -31,9 +31,9 @@ func lerp(c, min, max int, minval, maxval float64) float64 {
 }
 
 //TODO: optimize
-func rectValueAverage(m *lab.Image, r image.Rectangle) (L float64) {
+func average(m *lab.Image, r image.Rectangle) (L float64) {
 	for y := r.Min.Y; y < r.Max.Y; y++ {
-		i := m.PixOffset(r.Min.X, y)
+		i := m.Offset(r.Min.X, y)
 		for x := r.Min.X; x < r.Max.X; x++ {
 			L += m.L[i]
 			i++
@@ -49,10 +49,10 @@ func NormalizeGradientFromCorners(m *lab.Image) {
 
 	r := m.Bounds()
 
-	topLeft := rectValueAverage(m, image.Rect(r.Min.X, r.Min.Y, r.Min.X+e, r.Min.Y+e))
-	topRight := rectValueAverage(m, image.Rect(r.Max.X-e, r.Min.Y, r.Max.X, r.Min.Y+e))
-	bottomLeft := rectValueAverage(m, image.Rect(r.Min.X, r.Max.Y-e, r.Min.X+e, r.Max.Y))
-	bottomRight := rectValueAverage(m, image.Rect(r.Max.X-e, r.Max.Y-e, r.Max.X, r.Max.Y))
+	topLeft := average(m, image.Rect(r.Min.X, r.Min.Y, r.Min.X+e, r.Min.Y+e))
+	topRight := average(m, image.Rect(r.Max.X-e, r.Min.Y, r.Max.X, r.Min.Y+e))
+	bottomLeft := average(m, image.Rect(r.Min.X, r.Max.Y-e, r.Min.X+e, r.Max.Y))
+	bottomRight := average(m, image.Rect(r.Max.X-e, r.Max.Y-e, r.Max.X, r.Max.Y))
 
 	white := 100.0
 	average := (topLeft + topRight + bottomLeft + bottomRight) / 4
@@ -65,7 +65,7 @@ func NormalizeGradientFromCorners(m *lab.Image) {
 		grad := (right - left) / float64(r.Max.X-r.Min.X)
 		base := left
 
-		i := m.PixOffset(r.Min.X, y)
+		i := m.Offset(r.Min.X, y)
 		for x := r.Min.X; x < r.Max.X; x++ {
 			v := m.L[i] - base + white
 			x := 100 - (100-v)*invspan
@@ -73,5 +73,125 @@ func NormalizeGradientFromCorners(m *lab.Image) {
 			base += grad
 			i++
 		}
+	}
+}
+
+func NormalizeGradient(m *lab.Image) {
+	Desaturate(m)
+
+	r := m.Bounds()
+
+	base := m.Clone()
+	Erode(base, 5)
+	Blur(base, 5)
+
+	white := 100.0
+	average := average(m, base.Bounds())
+	invspan := 1 / (average / 100)
+
+	for y := r.Min.Y; y < r.Max.Y; y++ {
+		i := m.Offset(r.Min.X, y)
+		for x := r.Min.X; x < r.Max.X; x++ {
+			v := m.L[i] - base.L[i] + white
+			x := 100 - (100-v)*invspan
+			m.L[i] = x
+			i++
+		}
+	}
+}
+
+func max(a, b, c float64) float64 {
+	if a > b {
+		if a > c {
+			return a
+		} else {
+			return c
+		}
+	} else {
+		if b > c {
+			return b
+		} else {
+			return c
+		}
+	}
+}
+
+func Erode(m *lab.Image, steps int) {
+	for i := 0; i < steps; i++ {
+		ErodeHorizontal3(m)
+		ErodeVertical3(m)
+	}
+}
+
+func ErodeHorizontal3(m *lab.Image) {
+	r := m.Bounds()
+	for y := r.Min.Y; y < r.Max.Y; y++ {
+		i := m.Offset(r.Min.X, y)
+		p := m.L[i]
+		for x := r.Min.X; x < r.Max.X-1; x++ {
+			z, n := m.L[i], m.L[i+1]
+			m.L[i] = max(p, z, n)
+			p = z
+			i++
+		}
+		m.L[i] = max(p, m.L[i], m.L[i])
+	}
+}
+
+func ErodeVertical3(m *lab.Image) {
+	r := m.Bounds()
+	stride := m.Offset(r.Min.X, r.Min.Y+1) - m.Offset(r.Min.X, r.Min.Y)
+	for x := r.Min.X; x < r.Max.X; x++ {
+		i := m.Offset(x, r.Min.Y)
+		p := m.L[i]
+		for y := r.Min.Y; y < r.Max.Y-1; y++ {
+			z, n := m.L[i], m.L[i+stride]
+			m.L[i] = max(p, z, n)
+			p = z
+			i += stride
+		}
+		m.L[i] = max(p, m.L[i], m.L[i])
+	}
+}
+
+func avg(a, b, c float64) float64 {
+	return (a + b + c) / 3
+}
+
+func Blur(m *lab.Image, steps int) {
+	for i := 0; i < steps; i++ {
+		BlurHorizontal3(m)
+		BlurVertical3(m)
+	}
+}
+
+func BlurHorizontal3(m *lab.Image) {
+	r := m.Bounds()
+	for y := r.Min.Y; y < r.Max.Y; y++ {
+		i := m.Offset(r.Min.X, y)
+		p := m.L[i]
+		for x := r.Min.X; x < r.Max.X-1; x++ {
+			z, n := m.L[i], m.L[i+1]
+			m.L[i] = avg(p, z, n)
+			p = z
+			i++
+		}
+		m.L[i] = avg(p, m.L[i], m.L[i])
+	}
+}
+
+func BlurVertical3(m *lab.Image) {
+	r := m.Bounds()
+	stride := m.Offset(r.Min.X, r.Min.Y+1) - m.Offset(r.Min.X, r.Min.Y)
+	for x := r.Min.X; x < r.Max.X; x++ {
+		i := m.Offset(x, r.Min.Y)
+		p := m.L[i]
+		for y := r.Min.Y; y < r.Max.Y-1; y++ {
+			z, n := m.L[i], m.L[i+stride]
+			m.L[i] = avg(p, z, n)
+			p = z
+			i += stride
+		}
+		m.L[i] = avg(p, m.L[i], m.L[i])
 	}
 }

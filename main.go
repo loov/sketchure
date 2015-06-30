@@ -44,8 +44,7 @@ func ExampleCollage(folder string) {
 		images = append(images, m)
 
 		p := m.Clone()
-		filter.NormalizeGradientFromCorners(p)
-		filter.Desaturate(p)
+		filter.NormalizeGradient(p)
 		processed = append(processed, p)
 	}
 
