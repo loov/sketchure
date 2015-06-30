@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"image/jpeg"
 	"image/png"
 	"io/ioutil"
 	"os"
@@ -11,8 +12,6 @@ import (
 
 	"github.com/loov/sketch-capture/filter"
 	"github.com/loov/sketch-capture/lab"
-
-	_ "image/jpeg"
 )
 
 func check(err error) {
@@ -28,7 +27,10 @@ func ImageToFile(filename string, m image.Image) error {
 	}
 	defer file.Close()
 
-	return png.Encode(file, m)
+	if filepath.Ext(filename) == ".png" {
+		return png.Encode(file, m)
+	}
+	return jpeg.Encode(file, m, &jpeg.Options{Quality: 80})
 }
 
 func ExampleCollage(folder string) {
@@ -45,7 +47,7 @@ func ExampleCollage(folder string) {
 
 		p := m.Clone()
 		filter.Normalize(p, 110, 15)
-		// filter.Desaturate(p)
+		filter.Desaturate(p)
 		processed = append(processed, p)
 	}
 
@@ -63,7 +65,7 @@ func ExampleCollage(folder string) {
 		draw.Draw(collage, r, out, out.Bounds().Min, draw.Src)
 	}
 
-	ImageToFile("output~.png", collage)
+	ImageToFile("output~.jpg", collage)
 }
 
 func main() {
