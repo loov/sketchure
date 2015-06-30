@@ -44,7 +44,8 @@ func ExampleCollage(folder string) {
 		images = append(images, m)
 
 		p := m.Clone()
-		filter.NormalizeGradient(p)
+		filter.Normalize(p, 110, 15)
+		// filter.Desaturate(p)
 		processed = append(processed, p)
 	}
 
@@ -62,7 +63,7 @@ func ExampleCollage(folder string) {
 		draw.Draw(collage, r, out, out.Bounds().Min, draw.Src)
 	}
 
-	ImageToFile("collage.png", collage)
+	ImageToFile("output~.png", collage)
 }
 
 func main() {

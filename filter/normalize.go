@@ -62,16 +62,18 @@ func NormalizeCornersBilinear(m *lab.Image) {
 	}
 }
 
-func Normalize(m *lab.Image) {
-	const white = 110.0
-
-	Desaturate(m)
-
+// white is the lightness to scale to, where 100 means RGB white
+// when you don't want to preserve white background use value larger than 100
+//
+// lineWidth is the maximum line width on the page in pixels
+// the higher this value is, the less tolerant the algorithm is to quick
+// gradient/lighting changes
+func Normalize(m *lab.Image, white float64, lineWidth int) {
 	r := m.Bounds()
 
 	base := m.Clone()
-	Erode(base, 15)
-	BoxBlur(base, 15)
+	Erode(base, lineWidth)
+	BoxBlur(base, lineWidth)
 
 	average := average(m, base.Bounds())
 	invspan := 1 / (average / white)
@@ -79,9 +81,7 @@ func Normalize(m *lab.Image) {
 	for y := r.Min.Y; y < r.Max.Y; y++ {
 		i := m.Offset(r.Min.X, y)
 		for x := r.Min.X; x < r.Max.X; x++ {
-			v := m.L[i] - base.L[i] + white
-			x := white - (white-v)*invspan
-			m.L[i] = x
+			m.L[i] = white + (m.L[i]-base.L[i])*invspan
 			i++
 		}
 	}

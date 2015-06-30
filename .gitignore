@@ -3,6 +3,9 @@
 *.a
 *.so
 
+# Temporary files
+*~*
+
 # Folders
 _obj
 _test
