@@ -3,10 +3,10 @@ package filter
 import (
 	"image"
 
-	"github.com/loov/sketch-capture/lab"
+	"github.com/loov/sketch-capture/cielab"
 )
 
-func Desaturate(m *lab.Image) {
+func Desaturate(m *cielab.Image) {
 	m.A = make([]float64, len(m.A))
 	m.B = make([]float64, len(m.B))
 }
@@ -17,7 +17,7 @@ func lerp(c, min, max int, minval, maxval float64) float64 {
 }
 
 //TODO: optimize
-func average(m *lab.Image, r image.Rectangle) (L float64) {
+func average(m *cielab.Image, r image.Rectangle) (L float64) {
 	for y := r.Min.Y; y < r.Max.Y; y++ {
 		i := m.Offset(r.Min.X, y)
 		for x := r.Min.X; x < r.Max.X; x++ {
@@ -30,7 +30,7 @@ func average(m *lab.Image, r image.Rectangle) (L float64) {
 }
 
 //TODO: optimize
-func NormalizeCornersBilinear(m *lab.Image) {
+func NormalizeCornersBilinear(m *cielab.Image) {
 	const e = 20 // corner sample size
 
 	r := m.Bounds()
@@ -68,12 +68,12 @@ func NormalizeCornersBilinear(m *lab.Image) {
 // lineWidth is the maximum line width on the page in pixels
 // the higher this value is, the less tolerant the algorithm is to quick
 // gradient/lighting changes
-func Normalize(m *lab.Image, white float64, lineWidth int) {
+func Normalize(m *cielab.Image, white float64, lineWidth int) {
 	r := m.Bounds()
 
 	base := m.Clone()
-	Erode(base, lineWidth)
-	BoxBlur(base, lineWidth)
+	Erode(base, m.Rect.Dx()/100)
+	Blur(base, m.Rect.Dx()/100)
 
 	average := average(m, base.Bounds())
 	invspan := 1 / (average / white)

@@ -1,4 +1,4 @@
-package lab
+package cielab
 
 import (
 	"image"
@@ -14,7 +14,7 @@ func ImageFrom(src image.Image) *Image {
 		}
 	}
 
-	dst := NewImage(src.Bounds())
+	dst := NewLAB(src.Bounds())
 	draw.Draw(dst, dst.Bounds(), src, src.Bounds().Min, draw.Src)
 	return dst
 }

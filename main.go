@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image"
 	"image/draw"
@@ -10,8 +11,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/loov/sketch-capture/cielab"
 	"github.com/loov/sketch-capture/filter"
-	"github.com/loov/sketch-capture/lab"
+)
+
+var (
+	colored   = flag.Bool("colored", false, "try to preserve colors")
+	lineWidth = flag.Int("line", 15, "line-width in pixels")
+	white     = flag.Float64("white", 110, "the highest white value")
 )
 
 func check(err error) {
@@ -34,20 +41,22 @@ func ImageToFile(filename string, m image.Image) error {
 }
 
 func ExampleCollage(folder string) {
-	images := []*lab.Image{}
-	processed := []*lab.Image{}
+	images := []*cielab.Image{}
+	processed := []*cielab.Image{}
 	files, err := ioutil.ReadDir(folder)
 	check(err)
 
 	for _, file := range files {
 		fmt.Println("Processing", file.Name())
-		m, err := lab.ImageFromFile(filepath.Join(folder, file.Name()))
+		m, err := cielab.ImageFromFile(filepath.Join(folder, file.Name()))
 		check(err)
 		images = append(images, m)
 
 		p := m.Clone()
-		filter.Normalize(p, 110, 15)
-		filter.Desaturate(p)
+		filter.Normalize(p, *white, *lineWidth)
+		if !*colored {
+			filter.Desaturate(p)
+		}
 		processed = append(processed, p)
 	}
 
@@ -69,5 +78,17 @@ func ExampleCollage(folder string) {
 }
 
 func main() {
-	ExampleCollage("examples")
+	flag.Parse()
+	if flag.Arg(0) == "" {
+		ExampleCollage("examples")
+		return
+	}
+
+	m, err := cielab.ImageFromFile(flag.Arg(0))
+	check(err)
+	filter.Normalize(m, *white, *lineWidth)
+	if !*colored {
+		filter.Desaturate(m)
+	}
+	ImageToFile("output~.jpg", m)
 }

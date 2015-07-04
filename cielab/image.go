@@ -1,32 +1,33 @@
-package lab
+package cielab
 
 import (
 	"image"
 	"image/color"
 )
 
-var Model = color.ModelFunc(labmodel)
+// Color represents a color in LAB
+type Color struct{ L, A, B float64 }
 
-func labmodel(c color.Color) color.Color {
+var ColorModel = color.ModelFunc(convert)
+
+func convert(c color.Color) color.Color {
 	if _, ok := c.(Color); ok {
 		return c
 	}
+
 	r, g, b, _ := c.RGBA()
-	l, la, lb := FromRGB(r, g, b)
+	l, la, lb := SRGB16ToLAB(r, g, b)
 	return Color{l, la, lb}
 }
 
-type Color struct {
-	L, A, B float64
-}
-
 func (c Color) RGBA() (r, g, b, a uint32) {
-	r, g, b = ToRGB(c.L, c.A, c.B)
+	r, g, b = LABToSRGB16(c.L, c.A, c.B)
 	return r, g, b, 0xffff
 }
 
+// Image implements an image in CIELab color space
 type Image struct {
-	// L, A, B hold the appropriate image coordinates
+	// L, A, B hold the appropriate channels
 	L, A, B []float64
 	// Stride is the L, A and B stride in pixels
 	Stride int
@@ -34,7 +35,7 @@ type Image struct {
 	Rect image.Rectangle
 }
 
-func NewImage(r image.Rectangle) *Image {
+func NewLAB(r image.Rectangle) *Image {
 	w, h := r.Dx(), r.Dy()
 	sz := w * h * 4
 	return &Image{
@@ -61,13 +62,13 @@ func (p *Image) Clone() *Image {
 	return m
 }
 
-func (p *Image) ColorModel() color.Model { return color.NRGBA64Model }
+func (p *Image) ColorModel() color.Model { return ColorModel }
 
 func (p *Image) Bounds() image.Rectangle { return p.Rect }
 
-func (p *Image) At(x, y int) color.Color { return p.LabAt(x, y) }
+func (p *Image) At(x, y int) color.Color { return p.LABAt(x, y) }
 
-func (p *Image) LabAt(x, y int) Color {
+func (p *Image) LABAt(x, y int) Color {
 	if !(image.Point{x, y}.In(p.Rect)) {
 		return Color{}
 	}
@@ -85,11 +86,11 @@ func (p *Image) Set(x, y int, c color.Color) {
 	}
 
 	i := p.Offset(x, y)
-	c1 := Model.Convert(c).(Color)
+	c1 := ColorModel.Convert(c).(Color)
 	p.L[i], p.A[i], p.B[i] = c1.L, c1.A, c1.B
 }
 
-func (p *Image) SetLab(x, y int, c Color) {
+func (p *Image) SetLAB(x, y int, c Color) {
 	if !(image.Point{x, y}.In(p.Rect)) {
 		return
 	}
