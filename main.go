@@ -21,7 +21,7 @@ var (
 	corner  = flag.Bool("corner", false, "derive background from corners")
 
 	white      = flag.Float64("white", 110, "the highest white value")
-	cornerSize = flag.Float64("cornerSize", 0.05, "corner size relative to the image width")
+	cornerSize = flag.Float64("cornersize", 0.05, "corner size relative to the image width")
 	lineWidth  = flag.Float64("line", 0.05, "line-width relative to the image width")
 )
 
