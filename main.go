@@ -12,18 +12,41 @@ import (
 	"path/filepath"
 
 	"github.com/loov/sketch-capture/cielab"
-	"github.com/loov/sketch-capture/filter"
+	"github.com/loov/sketch-capture/cleanup"
+	"github.com/loov/sketch-capture/cleanup/filter"
 )
 
 var (
-	colored   = flag.Bool("colored", false, "try to preserve colors")
-	lineWidth = flag.Int("line", 15, "line-width in pixels")
-	white     = flag.Float64("white", 110, "the highest white value")
+	colored = flag.Bool("colored", false, "try to preserve colors")
+	corner  = flag.Bool("corner", false, "derive background from corners")
+
+	white      = flag.Float64("white", 110, "the highest white value")
+	cornerSize = flag.Float64("cornerSize", 0.05, "corner size relative to the image width")
+	lineWidth  = flag.Float64("line", 0.05, "line-width relative to the image width")
 )
 
 func check(err error) {
 	if err != nil {
 		panic(err)
+	}
+}
+
+func process(m *cielab.Image) {
+	dx := float64(m.Bounds().Dx())
+	opts := &cleanup.Options{
+		Whiteness:  *white,
+		LineWidth:  int(*lineWidth * dx),
+		CornerSize: int(*cornerSize * dx),
+	}
+
+	if *corner {
+		cleanup.ByCorners(m, opts)
+	} else {
+		cleanup.ByBase(m, opts)
+	}
+
+	if !*colored {
+		filter.Desaturate(m)
 	}
 }
 
@@ -53,10 +76,7 @@ func ExampleCollage(folder string) {
 		images = append(images, m)
 
 		p := m.Clone()
-		filter.Normalize(p, *white, *lineWidth)
-		if !*colored {
-			filter.Desaturate(p)
-		}
+		process(p)
 		processed = append(processed, p)
 	}
 
@@ -86,9 +106,7 @@ func main() {
 
 	m, err := cielab.ImageFromFile(flag.Arg(0))
 	check(err)
-	filter.Normalize(m, *white, *lineWidth)
-	if !*colored {
-		filter.Desaturate(m)
-	}
+	process(m)
+
 	ImageToFile("output~.jpg", m)
 }
