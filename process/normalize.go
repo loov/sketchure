@@ -1,10 +1,10 @@
-package cleanup
+package process
 
 import (
 	"image"
 
 	"github.com/loov/sketch-capture/cielab"
-	"github.com/loov/sketch-capture/cleanup/filter"
+	"github.com/loov/sketch-capture/process/filter"
 )
 
 func lerp(c, min, max int, minval, maxval float64) float64 {

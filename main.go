@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 
 	"github.com/loov/sketch-capture/cielab"
-	"github.com/loov/sketch-capture/cleanup"
-	"github.com/loov/sketch-capture/cleanup/filter"
+	"github.com/loov/sketch-capture/process"
+	"github.com/loov/sketch-capture/process/filter"
 )
 
 var (
@@ -31,18 +31,18 @@ func check(err error) {
 	}
 }
 
-func process(m *cielab.Image) {
+func handle(m *cielab.Image) {
 	dx := float64(m.Bounds().Dx())
-	opts := &cleanup.Options{
+	opts := &process.Options{
 		Whiteness:  *white,
 		LineWidth:  int(*lineWidth * dx),
 		CornerSize: int(*cornerSize * dx),
 	}
 
 	if *corner {
-		cleanup.ByCorners(m, opts)
+		process.ByCorners(m, opts)
 	} else {
-		cleanup.ByBase(m, opts)
+		process.ByBase(m, opts)
 	}
 
 	if !*colored {
@@ -76,7 +76,7 @@ func ExampleCollage(folder string) {
 		images = append(images, m)
 
 		p := m.Clone()
-		process(p)
+		handle(p)
 		processed = append(processed, p)
 	}
 
@@ -106,7 +106,7 @@ func main() {
 
 	m, err := cielab.ImageFromFile(flag.Arg(0))
 	check(err)
-	process(m)
+	handle(m)
 
 	ImageToFile("output~.jpg", m)
 }
