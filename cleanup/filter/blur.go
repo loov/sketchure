@@ -1,6 +1,6 @@
 package filter
 
-import "github.com/loov/sketch-capture/cielab"
+import "github.com/loov/sketchure/cielab"
 
 func avg(a, b, c float64) float64 {
 	return (a + b + c) / 3

@@ -11,9 +11,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/loov/sketch-capture/cielab"
-	"github.com/loov/sketch-capture/process"
-	"github.com/loov/sketch-capture/process/filter"
+	"github.com/loov/sketchure/cielab"
+	"github.com/loov/sketchure/cleanup"
+	"github.com/loov/sketchure/cleanup/filter"
 )
 
 var (
@@ -33,16 +33,16 @@ func check(err error) {
 
 func handle(m *cielab.Image) {
 	dx := float64(m.Bounds().Dx())
-	opts := &process.Options{
+	opts := &cleanup.Options{
 		Whiteness:  *white,
 		LineWidth:  int(*lineWidth * dx),
 		CornerSize: int(*cornerSize * dx),
 	}
 
 	if *corner {
-		process.ByCorners(m, opts)
+		cleanup.ByCorners(m, opts)
 	} else {
-		process.ByBase(m, opts)
+		cleanup.ByBase(m, opts)
 	}
 
 	if !*colored {

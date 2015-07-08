@@ -1,6 +1,6 @@
 package cielab
 
-import "github.com/loov/sketch-capture/cielab/gamma"
+import "github.com/loov/sketchure/cielab/gamma"
 
 func SRGB16ToLAB(r, g, b uint32) (l, la, lb float64) {
 	rl, gl, bl := gamma.LinearizeRGB16(uint16(r), uint16(g), uint16(b))
