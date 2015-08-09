@@ -58,6 +58,8 @@ func ByCorners(m *cielab.Image, opts *Options) {
 	}
 	cs := opts.CornerSize
 
+	filter.Median(m, 5)
+
 	topLeft := average(m, image.Rect(r.Min.X, r.Min.Y, r.Min.X+cs, r.Min.Y+cs))
 	topRight := average(m, image.Rect(r.Max.X-cs, r.Min.Y, r.Max.X, r.Min.Y+cs))
 	bottomLeft := average(m, image.Rect(r.Min.X, r.Max.Y-cs, r.Min.X+cs, r.Max.Y))
@@ -92,6 +94,8 @@ func ByBase(m *cielab.Image, opts *Options) {
 	}
 
 	white := opts.Whiteness
+
+	filter.Median(m, 5)
 
 	base := m.Clone()
 	filter.Erode(base, opts.LineWidth)
