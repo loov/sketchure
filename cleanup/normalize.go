@@ -95,7 +95,8 @@ func ByBase(m *cielab.Image, opts *Options) {
 
 	white := opts.Whiteness
 
-	filter.Median(m, 5)
+	// get rid of hot-pixels
+	filter.Median(m, 1)
 
 	base := m.Clone()
 	filter.Erode(base, opts.LineWidth)

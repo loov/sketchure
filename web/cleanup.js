@@ -22,7 +22,8 @@ function CleanupByBase(m, opts){
 		lineWidth = Math.min(m.width, m.height)*0.01|0;
 	}
 
-	Median(m, 5);
+	// get rid of hot-pixels
+	Median(m, 1);
 
 	var base = CloneImageData(m);
 	Erase(base, lineWidth);
