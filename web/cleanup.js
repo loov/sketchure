@@ -17,7 +17,12 @@ function CleanupByBase(m, opts){
 	}
 
 	var white = opts.whiteness;
-	var lineWidth = (opts.lineWidth || Math.min(m.width, m.height) * 0.05)|0;
+	var lineWidth = opts.lineWidth;
+	if(lineWidth === undefined){
+		lineWidth = Math.min(m.width, m.height)*0.01|0;
+	}
+
+	Median(m, 5);
 
 	var base = CloneImageData(m);
 	Erase(base, lineWidth);
