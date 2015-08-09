@@ -15,28 +15,37 @@ function ConvertFloatsToRGB(floats, uints){
 	}
 }
 
-function Linearize(data){
-	function linearize(v){
-		return v < 0.04045 ? v / 12.92 : Math.pow((v+0.055)/1.055, 2.4);
-	}
 
+function Linearize(data){
 	for(var i = 0; i < data.length; i += 4){
-		data[i+0] = linearize(+data[i+0]);
-		data[i+1] = linearize(+data[i+1]);
-		data[i+2] = linearize(+data[i+2]);
+		data[i+0] = Linearize.LUT[data[i+0]];
+		data[i+1] = Linearize.LUT[data[i+1]];
+		data[i+2] = Linearize.LUT[data[i+2]];
 	}
+}
+Linearize.value = function(v){
+	return v < 0.04045 ? v / 12.92 : Math.pow((v+0.055)/1.055, 2.4);
+};
+
+Linearize.LUT = new Uint8ClampedArray(256);
+for(var i = 0; i < Linearize.LUT.length; i++){
+	Linearize.LUT[i] = Linearize.value(i / 0xFF) * 0xFF;
 }
 
 function Delinearize(data){
-	function delinearize(v){
-		return v < 0.0031308 ? v * 12.92 : 1.055*Math.pow(v, 1.0/2.4) - 0.055;
-	}
-
 	for(var i = 0; i < data.length; i += 4){
-		data[i+0] = delinearize(+data[i+0]);
-		data[i+1] = delinearize(+data[i+1]);
-		data[i+2] = delinearize(+data[i+2]);
+		data[i+0] = Delinearize.LUT[data[i+0]];
+		data[i+1] = Delinearize.LUT[data[i+1]];
+		data[i+2] = Delinearize.LUT[data[i+2]];
 	}
+}
+Delinearize.value = function(v){
+	return v < 0.0031308 ? v * 12.92 : 1.055*Math.pow(v, 1.0/2.4) - 0.055;
+};
+
+Delinearize.LUT = new Uint8ClampedArray(256);
+for(var i = 0; i < Delinearize.LUT.length; i++){
+	Delinearize.LUT[i] = Delinearize.value(i / 0xFF) * 0xFF;
 }
 
 function RGBtoXYZ(data){
