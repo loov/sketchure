@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sketchure</title>
+</head>
+<body>
+
+<video id="video" width="320" height="240" autoplay></video>
+<br>
+<canvas id="ycbcr" width="320" height="240"></canvas>
+<canvas id="lab" width="320" height="240"></canvas>
+<script src="cielab.js"></script>
+<script src="filter.js"></script>
+<script src="cleanup.js"></script>
+
+<script>
+function $(sel){ return document.querySelector(sel); }
+window.addEventListener('DOMContentLoaded', init, false);
+
+function init(){
+	var view_ycbcr = $('#ycbcr').getContext('2d');
+	var view_lab = $('#lab').getContext('2d');
+
+	var video = $('#video');
+	var videoObject = { video: true };
+
+	var framebuffer = document.createElement('canvas');
+	framebuffer.width = 320;
+	framebuffer.height = 240;
+
+	var context = framebuffer.getContext('2d');
+
+	function handleError(error){
+		console.error("video capture error:", error);
+	}
+
+	if(navigator.getUserMedia){
+		navigator.getUserMedia(videoObject, function(stream){
+			video.src = stream;
+			video.play();
+		}, handleError);
+	}else if(navigator.webkitGetUserMedia){
+		navigator.webkitGetUserMedia(videoObject, function(stream){
+			video.src = window.URL.createObjectURL(stream);
+			video.play();
+		}, handleError);
+	}else if(navigator.mozGetUserMedia){
+		navigator.mozGetUserMedia(videoObject, function(stream){
+			video.src = window.URL.createObjectURL(stream);
+			video.play();
+		}, handleError);
+	}
+
+	video.addEventListener('play', render);
+
+	var lab = new Float32Array(320*240*4);
+
+	function render(){
+		if(video.paused || video.ended){ return; }
+
+		context.drawImage(video, 0, 0, 320, 240);
+		var m = context.getImageData(0, 0, 320, 240);
+
+		SRGBtoLAB(m.data, lab);
+
+		RGBtoYCBCR(m.data);
+		CleanupByBase(m, {whiteness: 280});
+		YCBCRtoRGB(m.data);
+		view_ycbcr.putImageData(m, 0, 0);
+
+
+		var labm = {
+			data: lab,
+			width: m.width,
+			height: m.height
+		};
+		CleanupByBase(labm, {whiteness: 110});
+		LABtoSRGB(lab, m.data);
+		view_lab.putImageData(m, 0, 0);
+
+		requestAnimationFrame(render);
+	}
+	requestAnimationFrame(render);
+}
+</script>
+</body>
+</html>
