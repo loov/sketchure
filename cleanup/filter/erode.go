@@ -1,8 +1,6 @@
 package filter
 
-import "github.com/loov/sketchure/cielab"
-
-func max(a, b, c float64) float64 {
+func max(a, b, c byte) byte {
 	if a >= b {
 		if a >= c {
 			return a
@@ -13,45 +11,44 @@ func max(a, b, c float64) float64 {
 	return c
 }
 
-// Erode L channel with 3x3 kernel
-func Erode(m *cielab.Image, steps int) {
+// Erode channel with 3x3 kernel
+func (ch *Channel) Erode(steps int) {
 	for i := 0; i < steps; i++ {
-		ErodeHorizontal3(m)
-		ErodeVertical3(m)
+		ch.ErodeH3()
+		ch.ErodeV3()
 	}
 }
 
-// Erode L channel horizontally with 3px kernel
-func ErodeHorizontal3(m *cielab.Image) {
-	r := m.Bounds()
-	for y := r.Min.Y; y < r.Max.Y; y++ {
-		i := m.Offset(r.Min.X, y)
-		p := m.L[i]
-		z := p
-		for x := r.Min.X; x < r.Max.X-1; x++ {
-			n := m.L[i+1]
-			m.L[i] = max(p, z, n)
+// Erode channel horizontally with 3px kernel
+func (ch *Channel) ErodeH3() {
+	data, w, h, stride := ch.Data, ch.Width, ch.Height, ch.Stride
+
+	for y := 0; y < h; y++ {
+		i := y * stride
+		e := y*stride + w - 1
+		p, z := data[i], data[i]
+		for ; i < e; i++ {
+			n := data[i+1]
+			data[i] = max(p, z, n)
 			p, z = z, n
-			i++
 		}
-		m.L[i] = max(p, m.L[i], m.L[i])
+		data[i] = max(p, data[i], data[i])
 	}
 }
 
-// Erode L channel vertically with 3px kernel
-func ErodeVertical3(m *cielab.Image) {
-	r := m.Bounds()
-	stride := m.Offset(r.Min.X, r.Min.Y+1) - m.Offset(r.Min.X, r.Min.Y)
-	for x := r.Min.X; x < r.Max.X; x++ {
-		i := m.Offset(x, r.Min.Y)
-		p := m.L[i]
-		z := p
-		for y := r.Min.Y; y < r.Max.Y-1; y++ {
-			n := m.L[i+stride]
-			m.L[i] = max(p, z, n)
+// Erode channel vertically with 3px kernel
+func (ch *Channel) ErodeV3() {
+	data, w, h, stride := ch.Data, ch.Width, ch.Height, ch.Stride
+
+	for x := 0; x < w; x++ {
+		i := x
+		e := (h-1)*stride + x
+		p, z := data[i], data[i]
+		for ; i < e; i += stride {
+			n := data[i+stride]
+			data[i] = max(p, z, n)
 			p, z = z, n
-			i += stride
 		}
-		m.L[i] = max(p, m.L[i], m.L[i])
+		data[i] = max(p, data[i], data[i])
 	}
 }

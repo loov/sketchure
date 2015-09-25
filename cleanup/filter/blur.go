@@ -1,50 +1,53 @@
 package filter
 
-import "github.com/loov/sketchure/cielab"
-
-func avg(a, b, c float64) float64 {
-	return (a + b + c) / 3
+func avg(a, b, c byte) byte {
+	t := (int(a) + int(b) + int(c)) / 3
+	if t < 0 {
+		t = 0
+	} else if t > 0xff {
+		t = 0xff
+	}
+	return byte(t)
 }
 
-// Blur L channel with 3x3 kernel
-func Blur(m *cielab.Image, steps int) {
+// Blur channel with 3x3 kernel
+func (ch *Channel) Blur(steps int) {
 	for i := 0; i < steps; i++ {
-		BlurHorizontal3(m)
-		BlurVertical3(m)
+		ch.BlurH3()
+		ch.BlurV3()
 	}
 }
 
-// Blur L channel horizontally with 3px kernel
-func BlurHorizontal3(m *cielab.Image) {
-	r := m.Bounds()
-	for y := r.Min.Y; y < r.Max.Y; y++ {
-		i := m.Offset(r.Min.X, y)
-		p := m.L[i]
-		z := p
-		for x := r.Min.X; x < r.Max.X-1; x++ {
-			n := m.L[i+1]
-			m.L[i] = avg(p, z, n)
+// Blur channel horizontally with 3px kernel
+func (ch *Channel) BlurH3() {
+	data, w, h, stride := ch.Data, ch.Width, ch.Height, ch.Stride
+
+	for y := 0; y < h; y++ {
+		i := y * stride
+		e := y*stride + w - 1
+		p, z := data[i], data[i]
+		for ; i < e; i++ {
+			n := data[i+1]
+			data[i] = avg(p, z, n)
 			p, z = z, n
-			i++
 		}
-		m.L[i] = avg(p, m.L[i], m.L[i])
+		data[i] = avg(p, data[i], data[i])
 	}
 }
 
-// Blur L channel vertically with 3px kernel
-func BlurVertical3(m *cielab.Image) {
-	r := m.Bounds()
-	stride := m.Offset(r.Min.X, r.Min.Y+1) - m.Offset(r.Min.X, r.Min.Y)
-	for x := r.Min.X; x < r.Max.X; x++ {
-		i := m.Offset(x, r.Min.Y)
-		p := m.L[i]
-		z := p
-		for y := r.Min.Y; y < r.Max.Y-1; y++ {
-			n := m.L[i+stride]
-			m.L[i] = avg(p, z, n)
+// Blur channel vertically with 3px kernel
+func (ch *Channel) BlurV3() {
+	data, w, h, stride := ch.Data, ch.Width, ch.Height, ch.Stride
+
+	for x := 0; x < w; x++ {
+		i := x
+		e := (h-1)*stride + x
+		p, z := data[i], data[i]
+		for ; i < e; i += stride {
+			n := data[i+stride]
+			data[i] = avg(p, z, n)
 			p, z = z, n
-			i += stride
 		}
-		m.L[i] = avg(p, m.L[i], m.L[i])
+		data[i] = avg(p, data[i], data[i])
 	}
 }

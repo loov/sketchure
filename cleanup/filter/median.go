@@ -1,8 +1,6 @@
 package filter
 
-import "github.com/loov/sketchure/cielab"
-
-func mid(a, b, c float64) float64 {
+func mid(a, b, c byte) byte {
 	if a > b {
 		if b > c {
 			return b
@@ -19,45 +17,44 @@ func mid(a, b, c float64) float64 {
 	return c
 }
 
-// Median L channel with 3x3 kernel
-func Median(m *cielab.Image, steps int) {
+// Median channel with 3x3 kernel
+func (ch *Channel) Median(steps int) {
 	for i := 0; i < steps; i++ {
-		MedianHorizontal3(m)
-		MedianVertical3(m)
+		ch.MedianH3()
+		ch.MedianV3()
 	}
 }
 
-// Median L channel horizontally with 3px kernel
-func MedianHorizontal3(m *cielab.Image) {
-	r := m.Bounds()
-	for y := r.Min.Y; y < r.Max.Y; y++ {
-		i := m.Offset(r.Min.X, y)
-		p := m.L[i]
-		z := p
-		for x := r.Min.X; x < r.Max.X-1; x++ {
-			n := m.L[i+1]
-			m.L[i] = mid(p, z, n)
+// Median channel horizontally with 3px kernel
+func (ch *Channel) MedianH3() {
+	data, w, h, stride := ch.Data, ch.Width, ch.Height, ch.Stride
+
+	for y := 0; y < h; y++ {
+		i := y * stride
+		e := y*stride + w - 1
+		p, z := data[i], data[i]
+		for ; i < e; i++ {
+			n := data[i+1]
+			data[i] = mid(p, z, n)
 			p, z = z, n
-			i++
 		}
-		m.L[i] = mid(p, m.L[i], m.L[i])
+		data[i] = mid(p, data[i], data[i])
 	}
 }
 
-// Median L channel vertically with 3px kernel
-func MedianVertical3(m *cielab.Image) {
-	r := m.Bounds()
-	stride := m.Offset(r.Min.X, r.Min.Y+1) - m.Offset(r.Min.X, r.Min.Y)
-	for x := r.Min.X; x < r.Max.X; x++ {
-		i := m.Offset(x, r.Min.Y)
-		p := m.L[i]
-		z := p
-		for y := r.Min.Y; y < r.Max.Y-1; y++ {
-			n := m.L[i+stride]
-			m.L[i] = mid(p, z, n)
+// Median channel vertically with 3px kernel
+func (ch *Channel) MedianV3() {
+	data, w, h, stride := ch.Data, ch.Width, ch.Height, ch.Stride
+
+	for x := 0; x < w; x++ {
+		i := x
+		e := (h-1)*stride + x
+		p, z := data[i], data[i]
+		for ; i < e; i += stride {
+			n := data[i+stride]
+			data[i] = mid(p, z, n)
 			p, z = z, n
-			i += stride
 		}
-		m.L[i] = mid(p, m.L[i], m.L[i])
+		data[i] = mid(p, data[i], data[i])
 	}
 }
