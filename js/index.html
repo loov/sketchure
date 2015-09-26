@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sketchure</title>
+	<meta name="viewport" content="width=device-width">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<style>
+	* {
+		box-sizing: border-box;
+	}
+	#page {
+		position: fixed;
+		left: 0; top: 0; right: 0; bottom: 0;
+	}
+
+	#page .top-bar {
+		position: absolute;
+		left: 0; top: 0; right: 0;
+		height: 32px;
+
+		overflow: hidden;
+		background: #eee;
+
+		border-bottom: 1px solid #ccc;
+	}
+
+	#page .top-bar > * {
+		float: left;
+		height: 32px;
+		line-height: 32px;
+		text-align: center;
+	}
+
+	#header {
+		font-family: Georgia;
+		padding: 0 16px;
+	}
+
+	#page .content {
+		position: absolute;
+		left: 0; top: 32px; right: 0; bottom: 0;
+		background: #fff;
+	}
+
+	img {
+		width: 100%;
+		max-height: 100%;
+		object-fit: contain;
+	}
+	</style>
+</head>
+<body>
+
+<div id="page">
+	<div class="top-bar">
+		<span id="header">Sketchure</span>
+		<input id="files" type="file">
+	</div>
+	<div class="content">
+		<img id="result">
+	</div>
+</div>
+
+</body>
+
+<script src="cleanup.js"></script>
+<script>
+document.getElementById("files").onchange = function (evt) {
+	"use strict";
+	var tgt = evt.target || window.event.srcElement;
+	var files = tgt.files;
+
+	// FileReader support
+    var fr = new FileReader();
+	fr.onload = function () {
+		var canvas = document.createElement("canvas");
+		var context = canvas.getContext("2d");
+
+		var image = new Image();
+		image.src = fr.result;
+
+		var w = image.width;
+		var h = image.height;
+
+		canvas.width = w;
+		canvas.height = h;
+
+		context.drawImage(image, 0, 0);
+		image = null;
+
+		var data = context.getImageData(0, 0, w, h);
+		cleanup.ImageData(data, 100, (Math.min(w, h) * 0.01) | 0, true);
+		context.putImageData(data, 0, 0);
+
+		var result = document.getElementById("result");
+		result.src = canvas.toDataURL("image/png");
+	};
+
+	fr.readAsDataURL(files[0]);
+};
+</script>
+</html>
