@@ -10,14 +10,13 @@ images run through the algorithm with default parameters.
 
 The algorithm itself is pretty trivial.
 
-1. Convert image into a colorspace that contains Luminance values.
+1. Convert image into a color-space that contains luminance values.
    YUV, YCbCr, YPbYPr, CIELab are all good options here. After comparing
-   different approaches, I got the best results/performance with YCbCr 8bit
-   precision.
+   different approaches, I got the best results with YCbCr and 8bit precision.
 2. Remove any noise created by the camera; we are assuming that we are in
    poor light conditions and the cameras are not perfects. For this step
-   a single pass with median filter can remove the hotspots. Of course something
-   more complicated could be used.
+   I used `median` filter with 3x3 kernel. Of course something more advanced
+   can be used.
 3. To extract the background we create a copy of the luminance channel and
    call it `base`.
 4. Filter `base` through `erode` with a kernel size equal to the maximum line widht
