@@ -1,40 +1,40 @@
 package filter
 
-import "image"
+import "github.com/loov/sketchure/cleanup/ycbcr"
 
-func Desaturate(m *image.YCbCr) {
+func Desaturate(m *ycbcr.Image) {
 	for i := 0; i < len(m.Cb); i++ {
-		m.Cb[i] = 127
+		m.Cb[i] = 0.0
 	}
 	for i := 0; i < len(m.Cr); i++ {
-		m.Cr[i] = 127
+		m.Cr[i] = 0.0
 	}
 }
 
 type Channel struct {
-	Data   []byte
+	Data   []float32
 	Width  int
 	Height int
 	Stride int
 }
 
-func (ch *Channel) Average() (avg float64) {
+func (ch *Channel) Average() (avg float32) {
 	data, w, h, stride := ch.Data, ch.Width, ch.Height, ch.Stride
 
 	for y := 0; y < h; y++ {
 		i := y * stride
 		e := i + w
 		for ; i < e; i++ {
-			avg += float64(data[i])
+			avg += data[i]
 		}
 	}
 
-	return avg / float64(w*h)
+	return avg / float32(w*h)
 }
 
 func (ch *Channel) Clone() *Channel {
 	cp := *ch
-	cp.Data = make([]byte, len(ch.Data))
+	cp.Data = make([]float32, len(ch.Data))
 	copy(cp.Data, ch.Data)
 	return &cp
 }

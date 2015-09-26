@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"image"
-	"image/color"
 	"image/draw"
 	"image/jpeg"
 	"image/png"
@@ -14,12 +13,13 @@ import (
 
 	"github.com/loov/sketchure/cleanup"
 	"github.com/loov/sketchure/cleanup/filter"
+	"github.com/loov/sketchure/cleanup/ycbcr"
 )
 
 var (
 	colored = flag.Bool("colored", false, "try to preserve colors")
 
-	white     = flag.Float64("white", 100, "the highest white value")
+	white     = flag.Float64("white", 1, "the highest white value")
 	lineWidth = flag.Float64("line", 0.05, "line-width relative to the image width")
 )
 
@@ -29,10 +29,10 @@ func check(err error) {
 	}
 }
 
-func handle(m *image.YCbCr) {
+func handle(m *ycbcr.Image) {
 	dx := float64(m.Bounds().Dx())
 	opts := &cleanup.Options{
-		Whiteness: *white,
+		Whiteness: float32(*white),
 		LineWidth: int(*lineWidth * dx),
 	}
 
@@ -56,68 +56,19 @@ func ImageToFile(filename string, m image.Image) error {
 	return jpeg.Encode(file, m, &jpeg.Options{Quality: 80})
 }
 
-func YCbCrFromFile(filename string) (*image.YCbCr, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	src, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-
-	if ycbcr, ok := src.(*image.YCbCr); ok {
-		return ycbcr, nil
-	}
-
-	return ImageToYCbCr(src), nil
-}
-
-func ImageToYCbCr(src image.Image) *image.YCbCr {
-	r := src.Bounds()
-	dst := image.NewYCbCr(src.Bounds(), image.YCbCrSubsampleRatio444)
-	for x := r.Min.X; x < r.Max.X; x++ {
-		for y := r.Min.Y; y < r.Max.Y; y++ {
-			c := src.At(x, y)
-			r, g, b, _ := c.RGBA()
-			yy, cb, cr := color.RGBToYCbCr(uint8(r>>8), uint8(g>>8), uint8(b>>8))
-
-			i := dst.YOffset(x, y)
-			dst.Y[i] = yy
-			dst.Cb[i] = cb
-			dst.Cr[i] = cr
-		}
-	}
-
-	return dst
-}
-
-func YCbCrClone(src *image.YCbCr) *image.YCbCr {
-	dst := *src
-	dst.Y = make([]uint8, len(src.Y))
-	copy(dst.Y, src.Y)
-	dst.Cb = make([]uint8, len(src.Cb))
-	copy(dst.Cb, src.Cb)
-	dst.Cr = make([]uint8, len(src.Cr))
-	copy(dst.Cr, src.Cr)
-	return &dst
-}
-
 func ExampleCollage(folder string) {
-	images := []*image.YCbCr{}
-	processed := []*image.YCbCr{}
+	images := []*ycbcr.Image{}
+	processed := []*ycbcr.Image{}
 	files, err := ioutil.ReadDir(folder)
 	check(err)
 
 	for _, file := range files {
 		fmt.Println("Processing", file.Name())
-		m, err := YCbCrFromFile(filepath.Join(folder, file.Name()))
+		m, err := ycbcr.FromFile(filepath.Join(folder, file.Name()))
 		check(err)
 		images = append(images, m)
 
-		p := YCbCrClone(m)
+		p := m.Clone()
 		handle(p)
 		processed = append(processed, p)
 	}
@@ -146,7 +97,7 @@ func main() {
 		return
 	}
 
-	m, err := YCbCrFromFile(flag.Arg(0))
+	m, err := ycbcr.FromFile(flag.Arg(0))
 	check(err)
 	handle(m)
 

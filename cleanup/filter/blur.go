@@ -1,13 +1,7 @@
 package filter
 
-func avg(a, b, c byte) byte {
-	t := (int(a) + int(b) + int(c)) / 3
-	if t < 0 {
-		t = 0
-	} else if t > 0xff {
-		t = 0xff
-	}
-	return byte(t)
+func avg(a, b, c float32) float32 {
+	return (a + b + c) / 3
 }
 
 // Blur channel with 3x3 kernel

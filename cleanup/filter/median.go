@@ -1,6 +1,6 @@
 package filter
 
-func mid(a, b, c byte) byte {
+func mid(a, b, c float32) float32 {
 	if a > b {
 		if b > c {
 			return b
