@@ -4,10 +4,10 @@ import "image"
 
 func Desaturate(m *image.YCbCr) {
 	for i := 0; i < len(m.Cb); i++ {
-		m.Cb[i] = 127
+		m.Cb[i] = 128
 	}
 	for i := 0; i < len(m.Cr); i++ {
-		m.Cr[i] = 127
+		m.Cr[i] = 128
 	}
 }
 

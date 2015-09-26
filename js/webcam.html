@@ -6,11 +6,10 @@
 <body>
 
 <input id="lineWidth" type="range" min="1" max="10" value="1"/>
+<input id="desaturate" type="checkbox" checked/>
 <br>
 <video id="video" width="640" height="480" autoplay></video>
 <canvas id="view" width="640" height="480"></canvas>
-<script src="ycbcr.js"></script>
-<script src="filter.js"></script>
 <script src="cleanup.js"></script>
 
 <script>
@@ -57,17 +56,7 @@ function init(){
 
 		context.drawImage(video, 0, 0, 640, 480);
 		var m = context.getImageData(0, 0, 640, 480);
-
-		Linearize(m.data);
-		RGBtoYCBCR(m.data);
-		CleanupByBase(m, {
-			whiteness: 255,
-			lineWidth: parseInt($("#lineWidth").value)
-		});
-		DesaturateYCBCR(m);
-		YCBCRtoRGB(m.data);
-		Delinearize(m.data);
-
+		cleanup.ImageData(m, 100, parseInt($("#lineWidth").value), $("#desaturate").checked);
 		view.putImageData(m, 0, 0);
 
 		requestAnimationFrame(render);
