@@ -22,13 +22,17 @@ type Options struct {
 	//   is to quick gradient/lighting changes
 	// If the value is too small, there will be errors in solid areas
 	LineWidth int
+
+	// Desature specifies whether the color should be removed from image
+	Desaturate bool
 }
 
 func DefaultOptionsFor(m *image.YCbCr) *Options {
 	r := m.Bounds()
 	return &Options{
-		Whiteness: 100,
-		LineWidth: r.Dx() / 20,
+		Whiteness:  100,
+		LineWidth:  r.Dx() / 20,
+		Desaturate: true,
 	}
 }
 
@@ -49,6 +53,10 @@ func ByBase(m *image.YCbCr, opts *Options) {
 
 	// get rid of hot-pixels
 	L.Median(1)
+
+	if opts.Desaturate {
+		filter.Desaturate(m)
+	}
 
 	base := L.Clone()
 	base.Erode(opts.LineWidth)

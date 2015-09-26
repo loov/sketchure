@@ -1,4 +1,7 @@
-Sketch Capture is a tool aimed for quickly capturing sketches with your phone
-or other portable device. Often when you take an image of a sketch you get a
-slight lighting gradient and noise, this tool tries to auto-magically to get rid
-of it.
+Sketchure is an algorithm that takes an image of a sketch taken in poor light
+conditions and removes light variances on the paper.
+
+On the left are input images taken with a phone and on the right are the
+images run through the algorithm with default parameters.
+
+![Comparison](https://raw.github.com/loov/sketchure/master/comparison.jpg)
