@@ -33,3 +33,9 @@ The algorithm itself is pretty trivial.
 8. Convert image back to the original color-space.
 
 There are two reference implementations of the algorithm: `cleanup/normalize.go` and `js/cleanup.js`.
+
+There are alternative possibilities to create the `base`.
+
+By corners: assume that the image is properly cropped and the the lighting transition is smooth. Sample from each corner and interpolate the light values between the four points.
+
+By white points: let the user specify which points are the background image. Sample around those points. Triangulate the points and interpolate between the points.
