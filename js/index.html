@@ -26,6 +26,7 @@
 <script src="cleanup.js"></script>
 
 <script>
+
 var Conf = {
 	whiteness: 100,
 	lineWidth: 1,
@@ -56,8 +57,13 @@ function display(file, canvas){
 	var preview = document.getElementById("preview");
 	if(file.name.indexOf(".png") >= 0) {
 		preview.src = canvas.toDataURL("image/png");
-	} else if (file.name.indexOf(".jpg") >= 0) {
+	} else if (
+		(file.name.indexOf(".jpg") >= 0) ||
+		(file.name.indexOf(".jpeg") >= 0)
+	) {
 		preview.src = canvas.toDataURL("image/jpeg");
+	} else {
+		preview.src = canvas.toDataURL();
 	}
 }
 
