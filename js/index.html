@@ -85,9 +85,9 @@ var gui = new dat.GUI({
 	autoOpen: false
 });
 
-gui.add(Conf, 'whiteness', 90, 110).onFinishChange(processSelected);
-gui.add(Conf, 'lineWidth', 0.1, 5).onFinishChange(processSelected);
-gui.add(Conf, 'desaturate').onFinishChange(processSelected);
+gui.add(Conf, 'whiteness', 90, 110).onFinishChange(process);
+gui.add(Conf, 'lineWidth', 0.1, 5).onFinishChange(process);
+gui.add(Conf, 'desaturate').onFinishChange(process);
 
 gui.close();
 
@@ -98,6 +98,8 @@ var progressbar = document.getElementById("progress").children[0];
 function progressnext(name){ progressbar.innerText = name; }
 function progress(p){ progressbar.style.width = ((p * 100)|0) + "%"; }
 
+
+var file = null;
 function display(file, canvas){
 	var preview = document.getElementById("preview");
 	if(file.name.indexOf(".png") >= 0) {
@@ -107,53 +109,52 @@ function display(file, canvas){
 	}
 }
 
-function process(file){
-	"use strict";
+var reader = new FileReader();
+function process(){
+	if(file === null){ return; }
 
-	progressnext("loading");
+	var canvas  = document.createElement("canvas");
+	var context = canvas.getContext("2d");
 
-	var reader = new FileReader();
-	reader.onload = function(){
-		var canvas  = document.createElement("canvas");
-		var context = canvas.getContext("2d");
+	var image = new Image();
+	image.onload = function(){
+		var w = image.width;
+		var h = image.height;
 
-		var image = new Image();
-		image.onload = function(){
-			var w = image.width;
-			var h = image.height;
+		canvas.width = w;
+		canvas.height = h;
 
-			canvas.width = w;
-			canvas.height = h;
+		context.drawImage(image, 0, 0);
 
-			context.drawImage(image, 0, 0);
+		var data = context.getImageData(0, 0, w, h);
+		cleanup.ImageData(data, {
+			whiteness: Conf.whiteness,
+			lineWidth: Math.max((Math.min(w,h) * Conf.lineWidth / 100)|0, 1),
+			desaturate: Conf.desaturate,
 
-			var data = context.getImageData(0, 0, w, h);
-			cleanup.ImageData(data, {
-				whiteness: Conf.whiteness,
-				lineWidth: Math.max((Math.min(w,h) * Conf.lineWidth / 100)|0, 1),
-				desaturate: Conf.desaturate,
+			onprogress: progress,
+			onprogressnext: progressnext
+		});
+		context.putImageData(data, 0, 0);
 
-				onprogress: progress,
-				onprogressnext: progressnext
-			});
-			context.putImageData(data, 0, 0);
-
-			display(file, canvas);
-		};
-		image.src = reader.result;
+		display(file, canvas);
 	};
-	reader.readAsDataURL(file);
+	image.src = reader.result;
 }
+reader.onload = process;
 
-function processSelected(){
+document.getElementById("files").onchange = function(){
 	"use strict";
 	var el = document.getElementById("files");
+	file = null;
 	if(el.files.length > 0){
-		process(el.files[0]);
-	}
-}
+		progress(0);
+		progressnext("loading");
 
-document.getElementById("files").onchange = processSelected;
+		file = el.files[0];
+		reader.readAsDataURL(file);
+	}
+};
 </script>
 
 <style>
