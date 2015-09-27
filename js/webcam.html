@@ -1,68 +1,99 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<title>Sketchure</title>
+	<meta name="viewport" content="width=device-width">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<link rel="stylesheet" href="main.css">
 </head>
-<body>
 
-<input id="lineWidth" type="range" min="1" max="10" value="1"/>
-<input id="desaturate" type="checkbox" checked/>
-<br>
-<video id="video" width="640" height="480" autoplay></video>
-<canvas id="view" width="640" height="480"></canvas>
+<body>
+	<div id="main">
+		<div id="controls"></div>
+	</div>
+	<div id="content">
+		<canvas id="preview" width="640" height="480"></canvas>
+	</div>
+	<video id="source" width="640" height="480" autoplay style="display:none"></video>
+</body>
+
+<script type="text/javascript" src="dat.gui.min.js"></script>
 <script src="cleanup.js"></script>
 
 <script>
-function $(sel){ return document.querySelector(sel); }
-window.addEventListener('DOMContentLoaded', init, false);
+var Conf = {
+	whiteness: 100,
+	lineWidth: 0.5,
+	desaturate: true
+};
 
-function init(){
-	var view = $('#view').getContext('2d');
+var gui = new dat.GUI({
+	autoPlace: false,
+	autoOpen: false
+});
 
-	var video = $('#video');
-	var videoObject = { video: true };
+gui.add(Conf, 'whiteness', 90, 110);
+gui.add(Conf, 'lineWidth', 0.1, 5);
+gui.add(Conf, 'desaturate');
 
-	var framebuffer = document.createElement('canvas');
-	framebuffer.width = 640;
-	framebuffer.height = 480;
+gui.close();
 
-	var context = framebuffer.getContext('2d');
+var controls = document.getElementById('controls');
+controls.appendChild(gui.domElement);
 
-	function handleError(error){
-		console.error("video capture error:", error);
-	}
 
-	if(navigator.getUserMedia){
-		navigator.getUserMedia(videoObject, function(stream){
-			video.src = stream;
-			video.play();
-		}, handleError);
-	}else if(navigator.webkitGetUserMedia){
-		navigator.webkitGetUserMedia(videoObject, function(stream){
-			video.src = window.URL.createObjectURL(stream);
-			video.play();
-		}, handleError);
-	}else if(navigator.mozGetUserMedia){
-		navigator.mozGetUserMedia(videoObject, function(stream){
-			video.src = window.URL.createObjectURL(stream);
-			video.play();
-		}, handleError);
-	}
+var source = document.getElementById("source");
 
-	video.addEventListener('play', render);
+// setup video source
+function handleError(message){ alert(message); }
+if(navigator.getUserMedia){
+	navigator.getUserMedia({video: true}, function(stream){
+		source.src = stream;
+		source.play();
+	}, handleError);
+}else if(navigator.webkitGetUserMedia){
+	navigator.webkitGetUserMedia({video: true}, function(stream){
+		source.src = window.URL.createObjectURL(stream);
+		source.play();
+	}, handleError);
+}else if(navigator.mozGetUserMedia){
+	navigator.mozGetUserMedia({video: true}, function(stream){
+		source.src = window.URL.createObjectURL(stream);
+		source.play();
+	}, handleError);
+}
 
-	function render(){
-		if(video.paused || video.ended){ return; }
+var W = 640;
+var H = 480;
 
-		context.drawImage(video, 0, 0, 640, 480);
-		var m = context.getImageData(0, 0, 640, 480);
-		cleanup.ImageData(m, 100, parseInt($("#lineWidth").value), $("#desaturate").checked);
-		view.putImageData(m, 0, 0);
+var sourcebuffer = document.createElement('canvas');
+sourcebuffer.width = W;
+sourcebuffer.height = H;
+var sourcecontext = sourcebuffer.getContext('2d');
 
+var previewcontext = document.getElementById("preview").getContext("2d");
+
+// run render loop
+function render(){
+	if(source.paused || source.ended){
 		requestAnimationFrame(render);
+		return;
 	}
+
+	sourcecontext.drawImage(source, 0, 0, W, H);
+	var data = sourcecontext.getImageData(0, 0, W, H);
+
+	cleanup.ImageData(data, {
+		whiteness: Conf.whiteness,
+		lineWidth: Math.max((Math.min(W,H) * Conf.lineWidth / 100)|0, 1),
+		desaturate: Conf.desaturate
+	});
+	previewcontext.putImageData(data, 0, 0);
+
 	requestAnimationFrame(render);
 }
+requestAnimationFrame(render);
 </script>
 </body>
 </html>

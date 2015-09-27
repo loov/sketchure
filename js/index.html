@@ -1,74 +1,13 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<title>Sketchure</title>
 	<meta name="viewport" content="width=device-width">
 	<meta name="apple-mobile-web-app-capable" content="yes" />
-	<style>
-	* {
-		box-sizing: border-box;
-	}
-
-	#main {
-		position: fixed;
-		left: 8px; top: 8px;
-		border: 1px solid rgba(0,0,0,0.1);
-		box-shadow: 2px 2px 3px rgba(0,0,0,0.3);
-		background: #fff;
-		z-index: 10;
-		padding: 8px 8px;
-	}
-
-	#main > * {
-		margin: 2px 0;
-	}
-
-	#title {
-		font-variant: small-caps;
-	}
-
-	#files {}
-
-	#progress {
-		height: 10px;
-		background: #ccc;
-	}
-	#progress .bar {
-		height: 100%;
-		width: 50%;
-		background: #7A00FF;
-
-		color: #fff;
-		font-size: 10px;
-		line-height: 10px;
-		font-family: monospace;
-	}
-
-	#controls {
-		margin-top: 4px;
-		margin-bottom: 20px;
-	}
-
-	#content {
-		position: fixed;
-		left: 0; top: 0; right: 0; bottom: 0;
-		background: #eee;
-	}
-
-	#content img {
-		width: 100%;
-		max-height: 100%;
-		object-fit: contain;
-
-		position: absolute;
-		bottom: 0;
-	}
-
-	.clear {
-		clear: both;
-	}
-	</style>
+	<link rel="stylesheet" href="main.css">
 </head>
+
 <body>
 	<div id="main">
 		<div id="title">Sketchure</div>
@@ -171,24 +110,5 @@ document.getElementById("files").onchange = function(){
 	}
 };
 </script>
-
-<style>
-.dg.main.taller-than-window .close-button { border-top: 1px solid #ddd; }
-.dg.main .close-button { background-color: #ccc; }
-.dg.main .close-button:hover { background-color: #ddd; }
-.dg { color: #555; text-shadow: none !important; }
-.dg.main::-webkit-scrollbar { background: #fafafa; }
-.dg.main::-webkit-scrollbar-thumb { background: #bbb; }
-.dg li:not(.folder) { background: #fafafa; border-bottom: 1px solid #ddd; }
-.dg li.save-row .button { text-shadow: none !important; }
-.dg li.title {
-	background: #e8e8e8 url(data:image/gif;base64, 0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlI+hKgFxoCgAOw==) 6px 10px no-repeat;
-}
-.dg .cr.function:hover,.dg .cr.boolean:hover { background: #fff; }
-.dg .c input[type=text] { background: #e9e9e9; }
-.dg .c input[type=text]:hover { background: #eee; }
-.dg .c input[type=text]:focus { background: #eee; color: #555; }
-.dg .c .slider { background: #e9e9e9; }
-.dg .c .slider:hover { background: #eee; }
-</style>
+<link rel="stylesheet" href="dat.gui.css">
 </html>
