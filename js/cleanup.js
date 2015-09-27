@@ -257,40 +257,78 @@
 		}
 	};
 
-	function run(image, whiteness, lineWidth, desaturate) {
-		if ((typeof desaturate === "undefined") || desaturate) {
-			image.desaturate();
-		}
 
-		var L = new Channel(image.Y, image.width, image.height);
-		var white = whiteness * 255.0 / 100.0;
+	function pipeline() {
+		return {
+			done: 0,
+			total: 0,
+			steps: [],
+			step: function(name, weight, fn) {
+				this.steps.push({
+					name: name,
+					weight: weight,
+					fn: fn
+				});
+				this.total += weight;
+				return this;
+			},
+			run: function(onprogress, onprogressnext) {
+				for (var i = 0; i < this.steps.length; i++) {
+					var step = this.steps[i];
+					onprogressnext && onprogressnext(step.name);
+					step.fn();
+					this.done += step.weight;
+					onprogress && onprogress(this.done / this.total);
+				}
 
-		// removes hot-pixels
-		L.median(1);
-
-		// base color
-		var base = L.clone();
-		// try to remove lines
-		base.erode(lineWidth);
-		// blur box artifacts due to erode
-		base.blur(lineWidth);
-
-		var average = base.average();
-		var invspan = 1.0 / (average / white);
-
-		for (var y = 0; y < L.height; y++) {
-			var i = y * L.width;
-			var e = i + L.width;
-			for (; i < e; i++) {
-				L.data[i] = white + (L.data[i] - base.data[i]) * invspan;
+				onprogressnext && onprogressnext("done");
 			}
 		}
 	}
 
-	cleanup.ImageData = function(imagedata, whiteness, lineWidth, desaturate) {
-		var image = new YCbCr(imagedata.width, imagedata.height);
-		image.assignImageData(imagedata);
-		run(image, whiteness, lineWidth, desaturate);
-		image.assignToImageData(imagedata);
+
+	cleanup.ImageData = function(imagedata, opts) {
+		var image, L, base;
+
+		pipeline().
+		step("convert", 1, function() {
+			image = new YCbCr(imagedata.width, imagedata.height);
+			image.assignImageData(imagedata);
+		}).
+		step("desaturate", 1, function() {
+			if ((typeof opts.desaturate === "undefined") || opts.desaturate) {
+				image.desaturate();
+			}
+		}).
+		step("prepare", 1, function() {
+			L = new Channel(image.Y, image.width, image.height);
+		}).
+		step("remove hot-pixels", 1, function() {
+			L.median(1);
+		}).
+		step("creating background", 1, function() {
+			base = L.clone();
+		}).
+		step("erasing lines from background", opts.lineWidth, function() {
+			base.erode(opts.lineWidth);
+		}).
+		step("blurring artifacts", opts.lineWidth, function() {
+			base.blur(opts.lineWidth);
+		}).
+		step("renormalizing image", 2, function() {
+			var average = base.average();
+			var white = opts.whiteness * 255.0 / 100.0;
+			var invspan = 1.0 / (average / white);
+			for (var y = 0; y < L.height; y++) {
+				var i = y * L.width;
+				var e = i + L.width;
+				for (; i < e; i++) {
+					L.data[i] = white + (L.data[i] - base.data[i]) * invspan;
+				}
+			}
+		}).
+		step("unconverting image", 1, function() {
+			image.assignToImageData(imagedata);
+		}).run(opts.onprogress, opts.onprogressnext);
 	};
 })(this.cleanup = {});

@@ -8,37 +8,41 @@
 	* {
 		box-sizing: border-box;
 	}
-	#page {
+
+	#main {
+		position: fixed;
+		left: 8px; top: 8px;
+		border: 1px solid rgba(0,0,0,0.1);
+		box-shadow: 1px 1px rgba(0,0,0,0.3);
+		background: #fff;
+		z-index: 10;
+		padding: 8px 8px;
+	}
+
+	#progress {
+		margin-top: 4px;
+		height: 10px;
+		background: #ccc;
+	}
+	#progress .bar {
+		height: 100%;
+		width: 50%;
+		background: #7A00FF;
+
+		color: #fff;
+		font-size: 10px;
+		line-height: 10px;
+		font-family: monospace;
+	}
+
+	#controls {
+		margin-top: 4px;
+		margin-bottom: 20px;
+	}
+
+	#content {
 		position: fixed;
 		left: 0; top: 0; right: 0; bottom: 0;
-	}
-
-	#page .top-bar {
-		position: absolute;
-		left: 0; top: 0; right: 0;
-		height: 32px;
-
-		overflow: hidden;
-		background: #eee;
-
-		border-bottom: 1px solid #ccc;
-	}
-
-	#page .top-bar > * {
-		float: left;
-		height: 32px;
-		line-height: 32px;
-		text-align: center;
-	}
-
-	#header {
-		font-family: Georgia;
-		padding: 0 16px;
-	}
-
-	#page .content {
-		position: absolute;
-		left: 0; top: 32px; right: 0; bottom: 0;
 		background: #fff;
 	}
 
@@ -47,33 +51,70 @@
 		max-height: 100%;
 		object-fit: contain;
 	}
+
+	.clear {
+		clear: both;
+	}
 	</style>
 </head>
 <body>
-
-<div id="page">
-	<div class="top-bar">
-		<span id="header">Sketchure</span>
-		<input id="files" type="file">
+	<div id="main">
+		<input id="files" type="file" accept="image/*">
+		<div id="progress">
+			<div class="bar">Select an image</div>
+		</div>
+		<div id="controls"></div>
 	</div>
-	<div class="content">
-		<img id="result">
+	<div id="content">
+		<img id="preview">
 	</div>
-</div>
-
 </body>
 
+<script type="text/javascript" src="dat.gui.min.js"></script>
 <script src="cleanup.js"></script>
-<script>
-document.getElementById("files").onchange = function (evt) {
-	"use strict";
-	var tgt = evt.target || window.event.srcElement;
-	var files = tgt.files;
 
-	// FileReader support
-    var fr = new FileReader();
-	fr.onload = function () {
-		var canvas = document.createElement("canvas");
+<script>
+var Conf = {
+	whiteness: 100,
+	lineWidth: 1,
+	desaturate: true
+};
+
+var gui = new dat.GUI({
+	autoPlace: false,
+	autoOpen: false
+});
+
+gui.add(Conf, 'whiteness', 90, 110).onFinishChange(processSelected);
+gui.add(Conf, 'lineWidth', 0.1, 5).onFinishChange(processSelected);
+gui.add(Conf, 'desaturate').onFinishChange(processSelected);
+
+gui.close();
+
+var controls = document.getElementById('controls');
+controls.appendChild(gui.domElement);
+
+var progressbar = document.getElementById("progress").children[0];
+function progressnext(name){ progressbar.innerText = name; }
+function progress(p){ progressbar.style.width = ((p * 100)|0) + "%"; }
+
+function display(file, canvas){
+	var preview = document.getElementById("preview");
+	if(file.name.indexOf(".png") >= 0) {
+		preview.src = canvas.toDataURL("image/png");
+	} else if (file.name.indexOf(".jpg") >= 0) {
+		preview.src = canvas.toDataURL("image/jpeg");
+	}
+}
+
+function process(file){
+	"use strict";
+
+	progressnext("loading");
+
+	var reader = new FileReader();
+	reader.onload = function(){
+		var canvas  = document.createElement("canvas");
 		var context = canvas.getContext("2d");
 
 		var image = new Image();
@@ -85,24 +126,53 @@ document.getElementById("files").onchange = function (evt) {
 			canvas.height = h;
 
 			context.drawImage(image, 0, 0);
-			image = null;
 
 			var data = context.getImageData(0, 0, w, h);
-			cleanup.ImageData(data, 100, (Math.min(w, h) * 0.01) | 0, true);
+			cleanup.ImageData(data, {
+				whiteness: Conf.whiteness,
+				lineWidth: Math.max((Math.min(w,h) * Conf.lineWidth / 100)|0, 1),
+				desaturate: Conf.desaturate,
+
+				onprogress: progress,
+				onprogressnext: progressnext
+			});
 			context.putImageData(data, 0, 0);
 
-			var result = document.getElementById("result");
-
-			if(files[0].name.indexOf(".png") >= 0) {
-				result.src = canvas.toDataURL("image/png");
-			} else if(files[0].name.indexOf(".jpg") >= 0) {
-				result.src = canvas.toDataURL("image/jpeg");
-			}
+			display(file, canvas);
 		};
-		image.src = fr.result;
+		image.src = reader.result;
 	};
+	reader.readAsDataURL(file);
+}
 
-	fr.readAsDataURL(files[0]);
-};
+function processSelected(){
+	"use strict";
+	var el = document.getElementById("files");
+	if(el.files.length > 0){
+		process(el.files[0]);
+	}
+}
+
+document.getElementById("files").onchange = processSelected;
 </script>
+
+<style>
+.dg.main.taller-than-window .close-button { border-top: 1px solid #ddd; }
+.dg.main .close-button { background-color: #ccc; }
+.dg.main .close-button:hover { background-color: #ddd; }
+.dg { color: #555; text-shadow: none !important; }
+.dg.main::-webkit-scrollbar { background: #fafafa; }
+.dg.main::-webkit-scrollbar-thumb { background: #bbb; }
+.dg li:not(.folder) { background: #fafafa; border-bottom: 1px solid #ddd; }
+.dg li.save-row .button { text-shadow: none !important; }
+.dg li.title {
+	background: #e8e8e8 url(data:image/gif;base64, 0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlI+hKgFxoCgAOw==) 6px 10px no-repeat;
+}
+.dg .cr.function:hover,.dg .cr.boolean:hover { background: #fff; }
+.dg .c input[type=text] { background: #e9e9e9; }
+.dg .c input[type=text]:hover { background: #eee; }
+.dg .c input[type=text]:focus { background: #eee; color: #555; }
+.dg .c .slider { background: #e9e9e9; }
+.dg .c .slider:hover { background: #eee; }
+</style>
 </html>
