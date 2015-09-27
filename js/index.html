@@ -19,8 +19,17 @@
 		padding: 8px 8px;
 	}
 
+	#main > * {
+		margin: 2px 0;
+	}
+
+	#title {
+		font-variant: small-caps;
+	}
+
+	#files {}
+
 	#progress {
-		margin-top: 4px;
 		height: 10px;
 		background: #ccc;
 	}
@@ -46,10 +55,13 @@
 		background: #eee;
 	}
 
-	img {
+	#content img {
 		width: 100%;
 		max-height: 100%;
 		object-fit: contain;
+
+		position: absolute;
+		bottom: 0;
 	}
 
 	.clear {
@@ -59,6 +71,7 @@
 </head>
 <body>
 	<div id="main">
+		<div id="title">Sketchure</div>
 		<input id="files" type="file" accept="image/*">
 		<div id="progress">
 			<div class="bar">Select an image</div>
@@ -112,6 +125,8 @@ function display(file, canvas){
 var reader = new FileReader();
 function process(){
 	if(file === null){ return; }
+	progress(0);
+	progressnext("processing");
 
 	var canvas  = document.createElement("canvas");
 	var context = canvas.getContext("2d");
