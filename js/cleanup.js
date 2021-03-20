@@ -93,7 +93,20 @@
 
 			return t / (w * h);
 		},
+		contrast: function(b, p) {
+			var data = this.data;
+			var w = this.width;
+			var h = this.height;
 
+			var t = 0.0;
+			for (var y = 0; y < h; y++) {
+				var i = y * w;
+				var e = i + w;
+				for (; i < e; i++) {
+					data[i] = Math.pow((data[i]+b)/100, p)*100 - b;
+				}
+			}
+		},
 		blur: function(steps) {
 			// average
 			function op(a, b, c) {
@@ -326,6 +339,9 @@
 					L.data[i] = white + (L.data[i] - base.data[i]) * invspan;
 				}
 			}
+		}).
+		step("increase contrast", opts.lineWidth, function() {
+			L.contrast(-70, 2);
 		}).
 		step("unconverting image", 1, function() {
 			image.assignToImageData(imagedata);
